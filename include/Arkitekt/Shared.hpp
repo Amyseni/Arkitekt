@@ -583,6 +583,12 @@ public:
 };
 
 
+//
+/* The following (until EOF) is from LibZHL by Kilburn (@FixItVinh) */
+/* It is licensed under MIT 2.0 */
+/* More details available in LICENSE.md */
+//
+
 //=================================================================================================
 #define _DEFINE_METHOD_HOOK1(_id, _classname, _name, _priority, ...) \
 	namespace { namespace Hook_##_classname##_name##_id##_priority { \
@@ -591,7 +597,7 @@ public:
 			auto hook __VA_ARGS__ ; \
 			auto super __VA_ARGS__ ; \
 		}; \
-		static FunctionHook hookObj = FunctionHook(#_classname "::" #_name, typeid(auto (_classname::*) __VA_ARGS__), &wrapper::hook, &internalSuper, _priority); \
+		static FunctionHook hookObj = FunctionHook(#_classname "::" #_name, typeid(_classname:: ## _name), &wrapper::hook, &internalSuper, _priority); \
 	} } \
 	auto FUNC_NAKED Hook_##_classname##_name##_id##_priority :: wrapper::super __VA_ARGS__ {__asm {JUMP_INSTRUCTION(Hook_##_classname##_name##_id##_priority ::internalSuper)}; } \
 	auto Hook_##_classname##_name##_id##_priority ::wrapper::hook __VA_ARGS__
@@ -610,7 +616,7 @@ public:
 			static auto __stdcall hook _type ; \
 			static auto __stdcall super _type ; \
 		}; \
-		static FunctionHook hookObj(#_classname "::" #_name, typeid(auto (*) _type), &wrapper::hook, &internalSuper, _priority); \
+		static FunctionHook hookObj(#_classname "::" #_name, &_classname ## :: ## _name, &wrapper::hook, &internalSuper, _priority); \
 	} } \
 	auto FUNC_NAKED Hook_##_classname##_name##_id##_priority :: wrapper::super _type {__asm {JUMP_INSTRUCTION(Hook_##_classname##_name##_id##_priority::internalSuper)}; } \
 	auto Hook_##_classname##_name##_id##_priority ::wrapper::hook _type
@@ -637,41 +643,3 @@ public:
 
 #define HOOK_GLOBAL(_name, _type) _DEFINE_GLOBAL_HOOK0(__LINE__, _name, 0, _type)
 #define HOOK_GLOBAL_PRIORITY(_name, _priority, _type) _DEFINE_GLOBAL_HOOK0(__LINE__, _name, _priority, _type)
-
-
-// struct CInstance;
-// constinit inline auto LOCK_RVALUE_MUTEX = FnBinding<void (__cdecl*)()>("LOCK_RVALUE_MUTEX", 0x41414141, "abc123");
-// constinit inline auto someBoundCondition = FnBinding<bool (__cdecl*)(int, int, int)>("test_function", 0x41414141, "abc123");
-
-// struct Test;
-
-// struct Test {
-//     struct {
-//         void (Test::*t)(int a1, int a2, int a3) = 0;
-//     }* _vtable;
-
-//     inline Test() {
-//         (this->*(_vtable->t))(1,2,3);
-        
-//         _vtable = (decltype(_vtable)) malloc(sizeof(_vtable));
-//     }
-
-//     template <typename...Args>
-//     inline void TestFunc(Args&&...args) {
-//         static FnBinding<void (Test::*)(int, int, int)> _func = FnBinding<void (Test::*)(int, int, int)>("LOCK_RVALUE_MUTEX", 0x41414141, "abc123");
-//         _func.operator()(this, std::forward<Args>(args)...);
-//     };
-
-// };
-
-// void test()
-// {
-    
-//     LOCK_RVALUE_MUTEX();
-    
-//     someBoundCondition(1,2,3);
-//     Test *t;
-//     t->TestFunc(1, 2, 4);
-//     Test t2;
-//     t2.TestFunc(1, 2, 3);
-// }
