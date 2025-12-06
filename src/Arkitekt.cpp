@@ -5,13 +5,12 @@
 #include <filesystem>
 #include <string>
 #include "detours.h"
+#include <Arkitekt/Logging.h>
 #include <Windows.h>
-#include <Arkitekt/SigScan.h>
 #include <Arkitekt.h>
 #include <thread>
 #include <mutex>
 #include <shared_mutex>
-#include <Arkitekt/YoYo.hpp>
 #include "PALMemoryProtection.h"
 
 using namespace Arkitekt;
@@ -22,38 +21,11 @@ static std::ofstream outCsv("out.csv", std::ios_base::out);
 static std::ofstream infoLog("info.log", std::ios_base::out);
 static std::ofstream errorLog("error.log", std::ios_base::out);
 static int32_t threadsRunning;
+
 inline static std::shared_mutex& ArkitektHookMutex() {
     static std::shared_mutex m;
     return m;
 }
-inline static std::shared_mutex& ArkitektLogMutex() {
-	static std::shared_mutex m;
-	return m;
-}
-inline static auto _zhlInit = []() -> bool{
-	{
-		std::unique_lock<std::shared_mutex> lock(ArkitektLogMutex());
-		WIN32_FIND_DATAA fd;
-		HANDLE hFileInf = FindFirstFileA("./Arkitekt.log", &fd);
-		if ((hFileInf) && hFileInf != HANDLE(-1))
-			DeleteFileA("./Arkitekt.log");
-		auto file = fopen("./Arkitekt.log", "w");
-		if (file) {
-			fprintf(file, "Arkitekt Log Initialized\n");
-			fclose(file);
-		}
-	}
-	return true;
-}();
-#define Log(fmt, ...) \
-{ \
-	std::unique_lock<std::shared_mutex> lock(ArkitektLogMutex()); \
-	auto file = fopen("./Arkitekt.log", "a"); \
-	if (file) { \
-		fprintf(file, fmt __VA_OPT__(,) __VA_ARGS__); \
-		fclose(file); \
-	} \
-}\
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
@@ -62,20 +34,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		if (hModule_Dupe == nullptr)
 		{
             GetModuleHandleEx(NULL, L"LibArkitekt.dll", &hModule_Dupe);
-            AllocConsole();
-            
-            infoLog << "Test 1 2 3 4" << std::endl;
-            errorLog << "Test 1 2 3 4" << std::endl;
-            infoLog << "Arkitekt DLL loaded: " << std::hex << hModule_Dupe << std::dec << std::endl;
             std::thread(Arkitekt::Init).detach();
         }
     }
     return true;
-}
-
-HOOK_GLOBAL(Function_Add, (const char* name, TRoutine func, int32_t ArgC, bool regOnly) -> void)
-{
-    Log("Adding function %s at %p", name, (void*)func);
 }
 
 void Arkitekt::Init()
@@ -84,9 +46,6 @@ void Arkitekt::Init()
     {
         value->Install();
     }
-    std::this_thread::sleep_for(std::chrono::seconds(15));
-    Log("%p", (*the_functions));
-    Log("%s", (*the_functions)[0]->m_Name);
 }
 
 //
@@ -454,27 +413,27 @@ int FunctionHook::Install()
 #endif // __amd64__
 
 #ifdef __amd64__
-Log("HookAddress: " PTR_PRINT_F ", SuperAddress: " PTR_PRINT_F "\n\n", (uintptr_t) _hook, (uintptr_t) original);
+GetLogger()->LogFormatted("HookAddress: " PTR_PRINT_F ", SuperAddress: " PTR_PRINT_F "\n\n", (uintptr_t) _hook, (uintptr_t) original);
 #endif // __amd64__
 #ifdef __i386__
 #define DEBUG 1
 #ifdef DEBUG
-	Log("Successfully hooked function %s\n",GetName().data());
-    Log("InternalHookAddress: %p\n", _internalHook);
-	Log("%s - internalHook:\n", GetName().data());
+	GetLogger()->LogFormatted("Successfully hooked function %s\n",GetName().data());
+    GetLogger()->LogFormatted("InternalHookAddress: %p\n", _internalHook);
+	GetLogger()->LogFormatted("%s - internalHook:\n", GetName().data());
     
 	for(unsigned int i=0 ; i<_hSize ; ++i)
-		Log("%02x ", static_cast<char>((reinterpret_cast<unsigned char*>(_internalHook))[i]));
-    Log("\n");
+		GetLogger()->LogFormatted("%02x ", static_cast<char>((reinterpret_cast<unsigned char*>(_internalHook))[i]));
+    GetLogger()->LogFormatted("\n");
 #endif // DEBUG
 
 #ifdef DEBUG
-    Log("InternalSuperAddress: %p\n", &(reinterpret_cast<unsigned char*>(_internalSuper)[0]));
+    GetLogger()->LogFormatted("InternalSuperAddress: %p\n", &(reinterpret_cast<unsigned char*>(_internalSuper)[0]));
 #endif // DEBUG
 
 	// for(unsigned int i=0 ; i<_sSize ; ++i)
-	// 	Log("%02x ", _internalSuper[i]);
-    // Log("\n");
+	// 	GetLogger()->LogFormatted("%02x ", _internalSuper[i]);
+    // GetLogger()->LogFormatted("\n");
 #endif // __i386__
 
 
