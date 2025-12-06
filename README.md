@@ -9,6 +9,6 @@ One of the core benefits of the way it binds those functions and variables is th
 Arkitekt uses some code from and is otherwise heavily based on LibZHL by Kilburn (@FixItVinh), as well as FTL Hyperspace (and specifically their own LibZHL modifications/upgrades) and Aurie/YYToolKit.
 HDE (Hacker's Disassembler) and MologieDetours are also used to create and install function hooks. Their licenses are included with them (in detours.h for Mologie, and in hde32/LICENSE and hde64/LICENSE for HDE).
 
-LibZHL is Licensed under MIT 2.0
-Hyperspace is Licensed under CC-BY-SA 4.0
-Aurie and YYToolKit are Licensed under AGPL-3.0
+- LibZHL is Licensed under MIT 2.0
+- Hyperspace is Licensed under CC-BY-SA 4.0
+- Aurie and YYToolKit are Licensed under AGPL-3.0
