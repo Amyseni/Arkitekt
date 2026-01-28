@@ -19,12 +19,16 @@ namespace Arkitekt {
     struct Action;
     struct ExecContext;
 };
+
+#ifdef ARK_GML
 enum class GMLVariableType {
 
 };
 enum class GMLComparisonTypes {
 
 };
+
+// borrowed from UTMT/Underanalyzer tysm
 
 #define    GMLOP_Conv    0x07u      
 #define    GMLOP_Mul     0x08u      
@@ -60,6 +64,10 @@ enum class GMLComparisonTypes {
                                      //       instead of every kind separate and then checking the actual type
 #define    GMLOP_Call    0xD9u      
 #define    GMLOP_Break   0xFFu      
+#endif
+
+struct Action;
+
 template <typename T> CHashMapHash CHashMapCalculateHash(T value)
 {
     return std::hash<T>()(value);
@@ -74,11 +82,19 @@ namespace Arkitekt {
 
         static Arkitekt::FnBlock* Add(const std::string_view& _name, void* _mem, std::size_t _size, void* _fn);
     };
+    
     struct Action {
-        virtual const std::vector<Action*>& GetSubActions() = 0;
-        virtual void Emit(Arkitekt::Compiler** _c) = 0;
-        virtual const std::vector<Action*>& GetSubActions() = 0;
-        virtual ~Action() = default;
+        enum class ErrorType {
+            READ_NULL_REF=0
+            // That's probablly the only error that ever happens, should be fine here, right?
+        };
+        virtual bool* IsFinalized() noexcept = 0;
+        virtual Action** const GetNodeOwner() noexcept = 0;
+        virtual void Draw() = 0;
+        virtual void Emit(Arkitekt::Compiler* c) = 0;
+        virtual void* ErrorHandler(const ErrorType& eT) {
+            return nullptr;
+        }
     };
     
     class Compiler {
@@ -117,18 +133,4 @@ namespace Arkitekt {
             void GetInstance(const std::string_view& _name);
     };
 }
-struct Action;
 
-struct Action {
-    enum class ErrorType {
-        READ_NULL_REF=0
-        // That's probablly the only error that ever happens, should be fine here, right?
-    };
-    virtual bool* IsFinalized() noexcept = 0;
-    virtual Action** const GetNodeOwner() noexcept = 0;
-    virtual void Draw() = 0;
-    virtual void Emit(Arkitekt::Compiler* c) = 0;
-    virtual void* ErrorHandler(const ErrorType& eT) {
-        return nullptr;
-    }
-};
