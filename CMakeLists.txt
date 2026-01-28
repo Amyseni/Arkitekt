@@ -57,22 +57,10 @@ include_directories("src")
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 add_library(${PROJ_NAME} SHARED 
-    "include/Arkitekt/Shared.hpp"
-    "include/Arkitekt/RValue.hpp"
-    "include/Arkitekt/YoYo.hpp"
-    "include/Arkitekt/SigScan.h"
-    "include/Arkitekt/Logging.h"
-    "include/Arkitekt/GameMaker_Defs.h"
+    "src/SigScan.h"
     "src/SigScan.cpp"
-    "src/detours.h"
     "src/Arkitekt.h"
-    "src/Direktor.h"
-    "src/hde.h"
-	"src/hde32/src/hde32.cpp"
-	"src/hde32/include/table32.h"
-	"src/hde32/include/hde32.h"
     "src/Logging.cpp"
-    "src/PALMemoryProtection.h"
     "src/Arkitekt.cpp"
 )
 
@@ -131,7 +119,6 @@ target_compile_definitions(${PROJ_NAME} PRIVATE
 	"NDEBUG;"
 	"_CRT_SECURE_NO_WARNINGS;"
 	"_CRT_NONSTDC_NO_DEPRECATE;"
-	"LIBZHL_EXPORTS;"
 	"SECURITY_WIN32;"
 	"__i386__;"
 	"_WIN32;"
@@ -142,7 +129,7 @@ target_compile_definitions(${PROJ_NAME} PRIVATE
 )
 
 target_compile_definitions(${PROJ_NAME} PRIVATE _REENTRANT)
-target_compile_definitions(${PROJ_NAME} PRIVATE LIBZHL_EXPORTS)
+
 ################################################################################
 # Compile and link options`
 ################################################################################
