@@ -82,7 +82,7 @@ namespace Arkitekt {
 
         static Arkitekt::FnBlock* Add(const std::string_view& _name, void* _mem, std::size_t _size, void* _fn);
     };
-    
+
     struct Action {
         enum class ErrorType {
             READ_NULL_REF=0
@@ -109,14 +109,8 @@ namespace Arkitekt {
             std::unordered_map<uint32_t, FnBlock> _blocks;
             std::unordered_map<uint32_t, std::string_view> m_scriptNames;
             std::unordered_map<uint32_t, void*> m_Locals;
-            Compiler(): _blocks{}, m_Locals{}, dasm(nullptr), nextlocal(0), maxlocals(8) {
-                
-            };
-            ~Compiler() {
-                static std::unordered_map<uint32_t, const std::string_view> m_scriptNames;
-                
-                
-            };
+            Compiler(): _blocks{}, m_Locals{}, dasm(nullptr), nextlocal(0), maxlocals(8) {};
+            ~Compiler() = default;
         public:
             FnBlock* FinalizeFunction(const std::string_view& name, void**& _labels);
             void Begin(void*** _labels);
