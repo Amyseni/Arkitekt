@@ -2,238 +2,287 @@
 ** This file has been pre-processed with DynASM.
 ** https://luajit.org/dynasm.html
 ** DynASM version 1.5.0, DynASM x86 version 1.5.0
-** DO NOT EDIT! The original file is in "include/Arkitekt/Compiler.cpp".
+** DO NOT EDIT! The original file is in "include/Arkitekt/Compiler.dcpp".
 */
 
-#line 1 "include/Arkitekt/Compiler.cpp"
+#line 1 "include/Arkitekt/Compiler.dcpp"
+#if false
+//|.if 1
+#endif
+//|.endif
+
+#include <Arkitekt/Shared.hpp>
 #include <Arkitekt/Compiler.h>
-#include <dynasm/dasm_x86.h>
 #include <dynasm/dasm_proto.h>
+#include <dynasm/dasm_x86.h>
 
 //|.arch x86
 #if DASM_VERSION != 10500
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 6 "include/Arkitekt/Compiler.cpp"
+#line 12 "include/Arkitekt/Compiler.dcpp"
 //|.section code
 #define DASM_SECTION_CODE	0
 #define DASM_MAXSECTION		1
-#line 7 "include/Arkitekt/Compiler.cpp"
+#line 13 "include/Arkitekt/Compiler.dcpp"
 //|.globals lbl_
 enum {
   lbl__func,
   lbl__MAX
 };
-#line 8 "include/Arkitekt/Compiler.cpp"
+#line 14 "include/Arkitekt/Compiler.dcpp"
 //|.actionlist compiler_actions
-static const unsigned char compiler_actions[61] = {
-  252,255,21,237,255,252,255,37,237,255,254,0,250,15,248,10,85,137,229,255,
-  82,80,255,81,83,86,87,255,252,255,181,233,255,129,196,239,255,95,94,91,89,
-  255,88,90,255,137,252,236,93,255,194,236,255,195,255,80,82,255,90,88,255
+static const unsigned char compiler_actions[54] = {
+  254,0,250,15,248,10,85,137,229,255,82,255,80,255,81,83,86,87,255,252,255,
+  181,233,255,81,255,252,255,21,237,255,95,94,91,89,255,88,255,90,255,137,252,
+  236,93,255,194,236,255,195,255,3,37,237,255
 };
 
-#line 9 "include/Arkitekt/Compiler.cpp"
+#line 15 "include/Arkitekt/Compiler.dcpp"
 
 
 
 using namespace Arkitekt;
-void Arkitekt::Compiler::EmitCall(void* address)
+
+void Arkitekt::Assembler::EmitHookWrapper(FunctionDefinition* forFunction, void* _targetHook)
 {
-    dasm_State** Dst = &this->dasm;
-    //| call dword [address]
-    dasm_put(Dst, 0, address);
-#line 17 "include/Arkitekt/Compiler.cpp"
-}
-void Arkitekt::Compiler::EmitJump(void* address)
-{
-    dasm_State** Dst = &this->dasm;
-    //| jmp dword [address]
-    dasm_put(Dst, 5, address);
-#line 22 "include/Arkitekt/Compiler.cpp"
+	dasm_State** Dst = &this->dasm;
+	auto _callSig = forFunction->GetCallFlags();
+	//|.code
+	dasm_put(Dst, 0);
+#line 25 "include/Arkitekt/Compiler.dcpp"
+	//|.align 0x10            // align for x86
+	//|->_func:               // begin function
+	//| push ebp              // saving esp and ebp
+	//| mov ebp, esp
+	dasm_put(Dst, 2);
+#line 29 "include/Arkitekt/Compiler.dcpp"
+	if ((_callSig & tCallFlags::_RETVOID) || !(_callSig & tCallFlags::_RETLONGLONG)) // save edx if it is not needed for our return value
+	{
+		//| push edx
+		dasm_put(Dst, 10);
+#line 32 "include/Arkitekt/Compiler.dcpp"
+	}
+	if (_callSig & tCallFlags::_RETVOID) // save eax if it is not storing a return 
+	{
+		//| push eax
+		dasm_put(Dst, 12);
+#line 36 "include/Arkitekt/Compiler.dcpp"
+	}
+	//| push ecx              // commonly clobbered registers
+	//| push ebx
+	//| push esi
+	//| push edi
+	dasm_put(Dst, 14);
+#line 41 "include/Arkitekt/Compiler.dcpp"
+	if (forFunction->GetArgCount() > 0)         // re-pushing all our arguments to their correct stack locations
+	{
+		for (int32_t i = forFunction->GetArgCount() - 1;i >= 0;i--)
+		{
+			//| push aword [ebp + 8 + (4 * i)]
+			dasm_put(Dst, 19, 8 + (4 * i));
+#line 46 "include/Arkitekt/Compiler.dcpp"
+		}
+	}
+	if ((_callSig & tCallFlags::_THISCALL))
+	{
+		//| push ecx
+		dasm_put(Dst, 24);
+#line 51 "include/Arkitekt/Compiler.dcpp"
+	}
+
+	//| call aword [_targetHook]     // call the hook (our hooks are all __stdcall so caller will cleanup the stack for us)
+	dasm_put(Dst, 26, _targetHook);
+#line 54 "include/Arkitekt/Compiler.dcpp"
+
+	//| pop edi              // as above but in reverse
+	//| pop esi
+	//| pop ebx
+	//| pop ecx
+	dasm_put(Dst, 31);
+#line 59 "include/Arkitekt/Compiler.dcpp"
+
+	if ((_callSig & tCallFlags::_RETVOID))
+	{
+		//| pop eax
+		dasm_put(Dst, 36);
+#line 63 "include/Arkitekt/Compiler.dcpp"
+	}
+
+	if ((_callSig & tCallFlags::_RETVOID) || !(_callSig & tCallFlags::_RETLONGLONG))
+	{
+		//| pop edx
+		dasm_put(Dst, 38);
+#line 68 "include/Arkitekt/Compiler.dcpp"
+	}
+
+	//| mov esp, ebp
+	//| pop ebp
+	dasm_put(Dst, 40);
+#line 72 "include/Arkitekt/Compiler.dcpp"
+
+	if (!(_callSig & tCallFlags::_CDECL) && (forFunction->GetArgCount() > 0))
+	{
+		//| ret sizeof(uintptr_t) * forFunction->GetArgCount()
+		dasm_put(Dst, 45, sizeof(uintptr_t) * forFunction->GetArgCount());
+#line 76 "include/Arkitekt/Compiler.dcpp"
+	}
+	else
+	{
+		//| ret
+		dasm_put(Dst, 48);
+#line 80 "include/Arkitekt/Compiler.dcpp"
+	}
+
 }
 
+void Arkitekt::Assembler::EmitSuperWrapper(FunctionDefinition* forFunction, void* _targetSuper)
+{
+	dasm_State** Dst = &this->dasm;
+	auto _callSig = forFunction->GetCallFlags();
+	//|.code
+	dasm_put(Dst, 0);
+#line 89 "include/Arkitekt/Compiler.dcpp"
+	//|.align 0x10
+	//|->_func:
+	//| push ebp
+	//| mov ebp, esp
+	dasm_put(Dst, 2);
+#line 93 "include/Arkitekt/Compiler.dcpp"
 
-void Arkitekt::Compiler::EmitHookPrologue(std::size_t _nArgs, bool _isVoid, bool _isCdecl)
-{
-    dasm_State** Dst = &this->dasm;
-    //|.code
-    dasm_put(Dst, 10);
-#line 29 "include/Arkitekt/Compiler.cpp"
-    //|.align 0x10
-    //|->_func:
-    //| push ebp
-    //| mov ebp, esp
-    dasm_put(Dst, 12);
-#line 33 "include/Arkitekt/Compiler.cpp"
-    if (_isVoid)
-    {
-        //| push edx
-        //| push eax
-        dasm_put(Dst, 20);
-#line 37 "include/Arkitekt/Compiler.cpp"
-    }
-    //| push ecx
-    //| push ebx
-    //| push esi
-    //| push edi
-    dasm_put(Dst, 23);
-#line 42 "include/Arkitekt/Compiler.cpp"
-    if (_nArgs > 0) 
-    {
-        for (int32_t i=_nArgs-1;i>=0;i--)
-        {
-            //| push dword [ebp+8+(4*i)]
-            dasm_put(Dst, 28, 8+(4*i));
-#line 47 "include/Arkitekt/Compiler.cpp"
-        }
-    }
-}
+	if ((_callSig & tCallFlags::_RETVOID) || !(_callSig & tCallFlags::_RETLONGLONG))
+	{
+		//| push edx
+		dasm_put(Dst, 10);
+#line 97 "include/Arkitekt/Compiler.dcpp"
+	}
+	if (_callSig & tCallFlags::_RETVOID)
+	{
+		//| push eax
+		dasm_put(Dst, 12);
+#line 101 "include/Arkitekt/Compiler.dcpp"
+	}
 
-void Arkitekt::Compiler::EmitHookEpilogue(std::size_t _nArgs, bool _isVoid, bool _isCdecl)
-{
-    dasm_State** Dst = &this->dasm;
-    if (_isCdecl && _nArgs > 0)
-    {
-        //| add esp, 4*_nArgs
-        dasm_put(Dst, 33, 4*_nArgs);
-#line 57 "include/Arkitekt/Compiler.cpp"
-    }
-    //| pop edi
-    //| pop esi
-    //| pop ebx
-    //| pop ecx
-    dasm_put(Dst, 37);
-#line 62 "include/Arkitekt/Compiler.cpp"
-    if (_isVoid)
-    {
-        //| pop eax
-        //| pop edx
-        dasm_put(Dst, 42);
-#line 66 "include/Arkitekt/Compiler.cpp"
-    }
-    //| mov esp, ebp
-    //| pop ebp
-    dasm_put(Dst, 45);
-#line 69 "include/Arkitekt/Compiler.cpp"
-    if (!_isCdecl && (_nArgs > 0))
-        //| ret sizeof(uintptr_t) * _nArgs
-        dasm_put(Dst, 50, sizeof(uintptr_t) * _nArgs);
-#line 71 "include/Arkitekt/Compiler.cpp"
-    else
-        //| ret
-        dasm_put(Dst, 53);
-#line 73 "include/Arkitekt/Compiler.cpp"
-}
-void Arkitekt::Compiler::SaveStackFrame()
-{
-    dasm_State** Dst = &this->dasm;
-    //| push ebp
-    //| mov ebp, esp
-    dasm_put(Dst, 16);
-#line 79 "include/Arkitekt/Compiler.cpp"
-}
-void Arkitekt::Compiler::PopFrameAndRet(bool _isCdecl /* = false */, int _nArgs /* = 2 */)
-{
-    dasm_State** Dst = &this->dasm;
-    //| mov esp, ebp
-    //| pop ebp
-    dasm_put(Dst, 45);
-#line 85 "include/Arkitekt/Compiler.cpp"
-    if (!_isCdecl && _nArgs > 0)
-        //| ret sizeof(uintptr_t) * _nArgs
-        dasm_put(Dst, 50, sizeof(uintptr_t) * _nArgs);
-#line 87 "include/Arkitekt/Compiler.cpp"
-    else
-        //| ret
-        dasm_put(Dst, 53);
-#line 89 "include/Arkitekt/Compiler.cpp"
-}
-void Arkitekt::Compiler::CommonPrologue(bool _isVoid /* = true */)
-{
-    dasm_State** Dst = &this->dasm;
-    if (_isVoid)
-    {
-        //| push eax
-        //| push edx
-        dasm_put(Dst, 55);
-#line 97 "include/Arkitekt/Compiler.cpp"
-    }
-    //| push ecx
-    //| push ebx
-    //| push esi
-    //| push edi
-    dasm_put(Dst, 23);
-#line 102 "include/Arkitekt/Compiler.cpp"
-}
-void Arkitekt::Compiler::CommonEpilogue(bool _isVoid /* = true */)
-{
-    dasm_State** Dst = &this->dasm;
-    //| pop edi
-    //| pop esi
-    //| pop ebx
-    //| pop ecx
-    dasm_put(Dst, 37);
-#line 110 "include/Arkitekt/Compiler.cpp"
-    if (_isVoid)
-    {
-        //| pop edx
-        //| pop eax
-        dasm_put(Dst, 58);
-#line 114 "include/Arkitekt/Compiler.cpp"
-    }
+	//| push ecx
+	//| push ebx
+	//| push esi
+	//| push edi
+	dasm_put(Dst, 14);
+#line 107 "include/Arkitekt/Compiler.dcpp"
+
+	if (forFunction->GetArgCount() > 0)
+	{
+		for (int32_t i = forFunction->GetArgCount() - 1;i >= 0;i--)
+		{
+			//| push aword [ebp + 8 + (4 * i)]
+			dasm_put(Dst, 19, 8 + (4 * i));
+#line 113 "include/Arkitekt/Compiler.dcpp"
+		}
+	}
+
+	//| call aword [_targetSuper]
+	dasm_put(Dst, 26, _targetSuper);
+#line 117 "include/Arkitekt/Compiler.dcpp"
+
+	if ((_callSig & tCallFlags::_CDECL))
+	{
+		//| add esp, [sizeof(uintptr_t) * forFunction->GetArgCount()]
+		dasm_put(Dst, 50, sizeof(uintptr_t) * forFunction->GetArgCount());
+#line 121 "include/Arkitekt/Compiler.dcpp"
+	}
+
+	//| pop edi
+	//| pop esi
+	//| pop ebx
+	//| pop ecx
+	dasm_put(Dst, 31);
+#line 127 "include/Arkitekt/Compiler.dcpp"
+
+	if ((_callSig & tCallFlags::_RETVOID))
+	{
+		//| pop eax
+		dasm_put(Dst, 36);
+#line 131 "include/Arkitekt/Compiler.dcpp"
+	}
+	if ((_callSig & tCallFlags::_RETVOID) || !(_callSig & tCallFlags::_RETLONGLONG))
+	{
+		//| pop edx
+		dasm_put(Dst, 38);
+#line 135 "include/Arkitekt/Compiler.dcpp"
+	}
+	//| mov esp, ebp
+	//| pop ebp
+	dasm_put(Dst, 40);
+#line 138 "include/Arkitekt/Compiler.dcpp"
+	if (!(_callSig & tCallFlags::_CDECL) && (forFunction->GetArgCount() > 0))
+	{
+		//| ret sizeof(uintptr_t) * forFunction->GetArgCount()
+		dasm_put(Dst, 45, sizeof(uintptr_t) * forFunction->GetArgCount());
+#line 141 "include/Arkitekt/Compiler.dcpp"
+	}
+	else
+	{
+		//| ret
+		dasm_put(Dst, 48);
+#line 145 "include/Arkitekt/Compiler.dcpp"
+	}
 }
 
-uint32_t Arkitekt::Compiler::DefineLabel(const std::string_view& _name)
+FnBlock& FnBlock::Create(FnBlock* ptr, const std::string_view& name, void* _mem, size_t _sz, void* _fn, void**& labels)
 {
-    
+	ptr = (FnBlock*) std::_Allocate<alignof(FnBlock)>(sizeof(FnBlock));
+	*ptr = FnBlock(_mem, _sz, _fn, &labels);
+	return *ptr;
 }
 
-Arkitekt::FnBlock* Arkitekt::FnBlock::Add(const std::string_view& name, void* _mem, std::size_t _sz, void* _fn)
+Arkitekt::Assembler* Arkitekt::Assembler::Get()
 {
-    ::new (&Arkitekt::Compiler::Get()->_blocks[CHashMapCalculateHash(name.data())]) FnBlock(_mem, _sz, _fn);
+	static Arkitekt::Assembler C;
+	if (!C._blocks.size()) C.Init();
+	return &C;
 }
 
-Arkitekt::Compiler* Arkitekt::Compiler::Get() {
-    static Arkitekt::Compiler C;
-    if (!C._blocks.size()) C.Init();
-    return &C;
-}
-
-FnBlock* Arkitekt::Compiler::FinalizeFunction(const std::string_view& name, void**& _labels)
+FnBlock* Arkitekt::Assembler::FinalizeFunction(const std::string_view& name, void**& _labels)
 {
-    const CHashMapHash _hash = CHashMapCalculateHash(name.data());
-    size_t _outSz;
-    dasm_link(&this->dasm, &_outSz);
-    void *buf;
+	size_t _outSz;
+	dasm_link(&this->dasm, &_outSz);
+	const auto hash = CHashMapCalculateHash(name.data());
+	void* buf;
 #ifdef _WIN32
-    buf = VirtualAlloc(0, _outSz, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	buf = VirtualAlloc(0, _outSz, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 #else
-    buf = mmap(0, _outSz, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	buf = mmap(0, _outSz, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #endif
-    dasm_encode(&this->dasm, buf);
+	dasm_encode(&this->dasm, buf);
 #ifdef _WIN32
-    { DWORD dwOld; VirtualProtect(buf, _outSz, PAGE_EXECUTE_READ, &dwOld); }
+	{ DWORD dwOld; VirtualProtect(buf, _outSz, PAGE_EXECUTE_READ, &dwOld); }
 #else
-    mprotect(buf, _outSz, PROT_READ | PROT_EXEC);
+	mprotect(buf, _outSz, PROT_READ | PROT_EXEC);
 #endif
-    return FnBlock::Add(name.data(), buf, _outSz, _labels[lbl__func]);
-}
-void Arkitekt::Compiler::Begin(void*** _labels)
-{
-    void *labels[lbl__MAX];
-    dasm_init(&this->dasm, DASM_MAXSECTION);
-    dasm_setupglobal(&this->dasm, labels, lbl__MAX);
-    *_labels = labels;
-    dasm_setup(&this->dasm, compiler_actions);
+	_blocks.emplace(std::pair(hash, (FnBlock*) std::_Allocate<alignof(FnBlock)>(sizeof(FnBlock))));
+	return ::new(_blocks[hash]) FnBlock(buf, _outSz, _labels[lbl__func], &_labels);
 }
 
-void Arkitekt::Compiler::End()
+void Arkitekt::Assembler::Begin(void*** _labels)
 {
-    dasm_free(&this->dasm);
+	void* labels[lbl__MAX];
+	dasm_init(&this->dasm, DASM_MAXSECTION);
+	dasm_setupglobal(&this->dasm, labels, lbl__MAX);
+	*_labels = labels;
+	dasm_setup(&this->dasm, compiler_actions);
 }
 
-bool Arkitekt::Compiler::Init()
+void Arkitekt::Assembler::End()
 {
-    this->_blocks = std::unordered_map<CHashMapHash, FnBlock>();
-    return true;
+	dasm_free(&this->dasm);
 }
+
+bool Arkitekt::Assembler::Init()
+{
+	this->_blocks = std::unordered_map<CHashMapHash, FnBlock*>();
+	return true;
+}
+//|.if 1
+#if 0
+//|.endif
+#endif

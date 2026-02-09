@@ -1,24 +1,20 @@
-cmake_minimum_required(VERSION 3.25.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 4.2.3 FATAL_ERROR)
 set(CMAKE_SYSTEM_VERSION 10.0 CACHE STRING "" FORCE)
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-project(${PROJ_NAME} CXX)
-
 message("Project version: ${PROJECT_VERSION}")
 
+
+project("${PROJ_NAME}" CXX)
 ################################################################################
 # Set target arch type if empty. Visual studio solution generator provides it.
 ################################################################################
 if(NOT CMAKE_VS_PLATFORM_NAME)
-	set(CMAKE_VS_PLATFORM_NAME "x86")
+	set(CMAKE_VS_PLATFORM_NAME "Win32")
 endif()
 message("${CMAKE_VS_PLATFORM_NAME} architecture in use")
 
-if(NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86"))
+if(NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32"))
 	message(FATAL_ERROR "${CMAKE_VS_PLATFORM_NAME} arch is not supported!")
 endif()
 
@@ -57,11 +53,20 @@ include_directories("src")
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 add_library(${PROJ_NAME} SHARED 
-    "src/SigScan.h"
-    "src/SigScan.cpp"
-    "src/Arkitekt.h"
-    "src/Logging.cpp"
-    "src/Arkitekt.cpp"
+	"include/Arkitekt/Shared.hpp"
+	"include/Arkitekt/Compiler.h"
+	"include/Arkitekt/Compiler.win32.cpp"
+	"src/hde32/include/hde32.h"
+	"src/hde32/include/table32.h"
+	"src/hde32/src/hde32.cpp"
+	"src/Arkitekt.cpp"
+	"src/Arkitekt.h"
+	"src/detours.h"
+	"src/hde.h"
+	"src/Logging.cpp"
+	"src/PALMemoryProtection.h"
+	"include/dynasm/dasm_proto.h"
+	"include/dynasm/dasm_x86.h"
 )
 
 set(CMAKE_SHARED_LIBRARY_PREFIX_CXX "")

@@ -1,16 +1,11 @@
-#include <Arkitekt/Logging.h>
-#include <Windows.h> 
-#include <chrono>
-#include <iomanip>
-#include <ctime>
+#include <Arkitekt/Shared.hpp>
 #include <fstream>
-#include <iostream>
-#include <sstream>
 
+std::shared_mutex Arkitekt::Logger::logMutex = std::shared_mutex();
 /**
  * @brief Singleton instance of the Logger.
  */
-Logger* GetLogger(void)
+Arkitekt::Logger* Arkitekt::GetLogger(void)
 {
     static Logger g_LoggerInstance;
     return &g_LoggerInstance;
@@ -31,7 +26,7 @@ Logger::~Logger()
 
 bool Logger::Init(const std::string& filename)
 {
-    std::lock_guard<std::mutex> lock(logMutex);
+    std::lock_guard<std::shared_mutex> lock(Arkitekt::Logger::logMutex);
     if (outFile.is_open())
         return true;
     outFile.open(filename, std::ios::out | std::ios::trunc);
@@ -44,7 +39,7 @@ bool Logger::Init(const std::string& filename)
  */
 void Logger::Cleanup(void)
 {
-    std::lock_guard<std::mutex> lock(logMutex);
+    std::lock_guard<std::shared_mutex> lock(logMutex);
     if (outFile.is_open())
     {
         outFile.flush();
@@ -101,7 +96,7 @@ std::string Logger::ParseFormatting(
  */
 bool Logger::WriteToLog(const std::string& message, bool flushLine)
 {
-    std::lock_guard<std::mutex> lock(logMutex);
+    std::lock_guard<std::shared_mutex> lock(logMutex);
     if (!outFile.is_open())
     {
         return false;
