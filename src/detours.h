@@ -30,7 +30,7 @@
  * @todo	Other detour types, maybe use/write a mutation engine
  */
 #ifdef _MSVC_VER
-#pragma warning(disable:4244)
+#pragma warning(disable : 4244)
 #endif
 
 #ifndef INCLUDED_LIB_MOLOGIE_DETOURS_DETOURS_H
@@ -42,26 +42,21 @@
 #include <cstring>
 
 #ifdef WIN32
-#  include "Windows.h"
-#  define MOLOGIE_DETOURS_MEMORY_UNPROTECT(ADDRESS, SIZE, OLDPROT) (VirtualProtect((LPVOID)(ADDRESS), (SIZE_T)(SIZE), PAGE_EXECUTE_READWRITE, &OLDPROT) == TRUE)
-#  define MOLOGIE_DETOURS_MEMORY_REPROTECT(ADDRESS, SIZE, OLDPROT) (VirtualProtect((LPVOID)(ADDRESS), (SIZE_T)(SIZE), OLDPROT, &OLDPROT) == TRUE)
-#  define MOLOGIE_DETOURS_MEMORY_WINDOWS_INIT(NAME) DWORD NAME
+#include "Windows.h"
+#define MOLOGIE_DETOURS_MEMORY_UNPROTECT(ADDRESS, SIZE, OLDPROT) (VirtualProtect((LPVOID)(ADDRESS), (SIZE_T)(SIZE), PAGE_EXECUTE_READWRITE, &OLDPROT) == TRUE)
+#define MOLOGIE_DETOURS_MEMORY_REPROTECT(ADDRESS, SIZE, OLDPROT) (VirtualProtect((LPVOID)(ADDRESS), (SIZE_T)(SIZE), OLDPROT, &OLDPROT) == TRUE)
+#define MOLOGIE_DETOURS_MEMORY_WINDOWS_INIT(NAME) DWORD NAME
 #else
-#  include <sys/mman.h>
-#  include <unistd.h>
-#  define MOLOGIE_DETOURS_MEMORY_POSIX_PAGEPROTECT(ADDRESS, SIZE, NEWPROT) \
-	( \
-		mprotect((void*)((((uintptr_t)(ADDRESS) + pageSize_ - 1) & ~(pageSize_ - 1)) - pageSize_), pageSize_, NEWPROT) == 0 \
-	&&	( \
-			((((uintptr_t)(ADDRESS) + pageSize_ - 1) & ~(pageSize_ - 1)) - pageSize_) == ((((uintptr_t)(ADDRESS) + (SIZE) + pageSize_ - 1) & ~(pageSize_ - 1)) - pageSize_) \
-		||	mprotect((void*)((((uintptr_t)(ADDRESS) + (SIZE) + pageSize_ - 1) & ~(pageSize_ - 1)) - pageSize_), pageSize_, NEWPROT) == 0 \
-		) \
-	)
-#  define MOLOGIE_DETOURS_MEMORY_UNPROTECT(ADDRESS, SIZE, OLDPROT) MOLOGIE_DETOURS_MEMORY_POSIX_PAGEPROTECT((ADDRESS), (SIZE), PROT_READ | PROT_WRITE | PROT_EXEC)
-#  define MOLOGIE_DETOURS_MEMORY_REPROTECT(ADDRESS, SIZE, OLDPROT) MOLOGIE_DETOURS_MEMORY_POSIX_PAGEPROTECT((ADDRESS), (SIZE), PROT_READ | PROT_EXEC)
-#  define MOLOGIE_DETOURS_MEMORY_WINDOWS_INIT(NAME)
+#include <sys/mman.h>
+#include <unistd.h>
+#define MOLOGIE_DETOURS_MEMORY_POSIX_PAGEPROTECT(ADDRESS, SIZE, NEWPROT) \
+	(                                                                    \
+		mprotect((void *)((((uintptr_t)(ADDRESS) + pageSize_ - 1) & ~(pageSize_ - 1)) - pageSize_), pageSize_, NEWPROT) == 0 && (((((uintptr_t)(ADDRESS) + pageSize_ - 1) & ~(pageSize_ - 1)) - pageSize_) == ((((uintptr_t)(ADDRESS) + (SIZE) + pageSize_ - 1) & ~(pageSize_ - 1)) - pageSize_) || mprotect((void *)((((uintptr_t)(ADDRESS) + (SIZE) + pageSize_ - 1) & ~(pageSize_ - 1)) - pageSize_), pageSize_, NEWPROT) == 0))
+#define MOLOGIE_DETOURS_MEMORY_UNPROTECT(ADDRESS, SIZE, OLDPROT) MOLOGIE_DETOURS_MEMORY_POSIX_PAGEPROTECT((ADDRESS), (SIZE), PROT_READ | PROT_WRITE | PROT_EXEC)
+#define MOLOGIE_DETOURS_MEMORY_REPROTECT(ADDRESS, SIZE, OLDPROT) MOLOGIE_DETOURS_MEMORY_POSIX_PAGEPROTECT((ADDRESS), (SIZE), PROT_READ | PROT_EXEC)
+#define MOLOGIE_DETOURS_MEMORY_WINDOWS_INIT(NAME)
 #endif
-#define MOLOGIE_DETOURS_DETOUR_SIZE (1 + sizeof(void*))
+#define MOLOGIE_DETOURS_DETOUR_SIZE (1 + sizeof(void *))
 
 /**
  * @namespace	MologieDetours
@@ -87,9 +82,9 @@ namespace MologieDetours
 	 * @brief	Defines an alias representing type of a pointerto an address.
 	 */
 #if defined(MOLOGIE_DETOURS_HDE_32)
-	typedef uint32_t* address_pointer_type;
+	typedef uint32_t *address_pointer_type;
 #elif defined(MOLOGIE_DETOURS_HDE_64)
-	typedef uint64_t* address_pointer_type;
+	typedef uint64_t *address_pointer_type;
 #endif
 
 	/**
@@ -104,8 +99,8 @@ namespace MologieDetours
 	{
 	public:
 		typedef std::runtime_error _Mybase;
-		explicit DetourException(const std::string& _Message) : _Mybase(_Message.c_str()) { }
-		explicit DetourException(const char* _Message) : _Mybase(_Message) { }
+		explicit DetourException(const std::string &_Message) : _Mybase(_Message.c_str()) {}
+		explicit DetourException(const char *_Message) : _Mybase(_Message) {}
 	};
 
 	/**
@@ -120,11 +115,12 @@ namespace MologieDetours
 	{
 	public:
 		typedef DetourException _Mybase;
-		explicit DetourPageProtectionException(const std::string& _Message, const void* errorAddress) : _Mybase(_Message.c_str()), errorAddress_(errorAddress) { }
-		explicit DetourPageProtectionException(const char* _Message, const void* errorAddress) : _Mybase(_Message), errorAddress_(errorAddress) { }
-		const void* GetErrorAddress() { return errorAddress_; }
+		explicit DetourPageProtectionException(const std::string &_Message, const void *errorAddress) : _Mybase(_Message.c_str()), errorAddress_(errorAddress) {}
+		explicit DetourPageProtectionException(const char *_Message, const void *errorAddress) : _Mybase(_Message), errorAddress_(errorAddress) {}
+		const void *GetErrorAddress() { return errorAddress_; }
+
 	private:
-		const void* errorAddress_;
+		const void *errorAddress_;
 	};
 
 	/**
@@ -139,8 +135,8 @@ namespace MologieDetours
 	{
 	public:
 		typedef DetourException _Mybase;
-		explicit DetourDisassemblerException(const std::string& _Message) : _Mybase(_Message.c_str()) { }
-		explicit DetourDisassemblerException(const char* _Message) : _Mybase(_Message) { }
+		explicit DetourDisassemblerException(const std::string &_Message) : _Mybase(_Message.c_str()) {}
+		explicit DetourDisassemblerException(const char *_Message) : _Mybase(_Message) {}
 	};
 
 	/**
@@ -155,8 +151,8 @@ namespace MologieDetours
 	{
 	public:
 		typedef DetourException _Mybase;
-		explicit DetourRelocationException(const std::string& _Message) : _Mybase(_Message.c_str()) { }
-		explicit DetourRelocationException(const char* _Message) : _Mybase(_Message) { }
+		explicit DetourRelocationException(const std::string &_Message) : _Mybase(_Message.c_str()) {}
+		explicit DetourRelocationException(const char *_Message) : _Mybase(_Message) {}
 	};
 
 	/**
@@ -167,7 +163,8 @@ namespace MologieDetours
 	 * @author	Oliver Kuckertz
 	 * @date	14.05.2011
 	 */
-	template <typename function_type> class Detour
+	template <typename function_type>
+	class Detour
 	{
 	public:
 		/**
@@ -219,7 +216,7 @@ namespace MologieDetours
 		 * @param	lpProcName	Name of the pointer to a proc.
 		 * @param	pDetour   	The detour.
 		 */
-		Detour(const char* moduleName, const char* lpProcName, function_type pDetour)
+		Detour(const char *moduleName, const char *lpProcName, function_type pDetour)
 			: pSource_(reinterpret_cast<function_type>(GetProcAddress(GetModuleHandleA(moduleName), lpProcName))), pDetour_(pDetour), instructionCount_(0)
 		{
 			CreateDetour();
@@ -236,7 +233,7 @@ namespace MologieDetours
 		 * @param	lpProcName	Name of the pointer to a proc.
 		 * @param	pDetour   	The detour.
 		 */
-		Detour(HMODULE module, const char* lpProcName, function_type pDetour)
+		Detour(HMODULE module, const char *lpProcName, function_type pDetour)
 			: pSource_(reinterpret_cast<function_type>(GetProcAddress(module, lpProcName))), pDetour_(pDetour), instructionCount_(0)
 		{
 			CreateDetour();
@@ -263,7 +260,7 @@ namespace MologieDetours
 				// Attempt to revert
 				Revert();
 			}
-			catch(DetourException &)
+			catch (DetourException &)
 			{
 				// Reverting failed, redirect trampoline to original code instead
 				*reinterpret_cast<address_pointer_type>(trampoline_ + 1) = backupOriginalCode_ - trampoline_ - MOLOGIE_DETOURS_DETOUR_SIZE;
@@ -357,32 +354,32 @@ namespace MologieDetours
 			MOLOGIE_DETOURS_MEMORY_WINDOWS_INIT(dwProt);
 
 			// Make things simple
-			uint8_t* targetFunction = reinterpret_cast<uint8_t*>(pSource_);
+			uint8_t *targetFunction = reinterpret_cast<uint8_t *>(pSource_);
 #ifdef WIN32
 			// Check whether the function starts with a relative short jump(- sizeof detour) and assume a hotpatched function
-			if(targetFunction[0] == 0xEB && static_cast<int8_t>(targetFunction[1]) == - static_cast<int8_t>(MOLOGIE_DETOURS_DETOUR_SIZE) - 2)
+			if (targetFunction[0] == 0xEB && static_cast<int8_t>(targetFunction[1]) == -static_cast<int8_t>(MOLOGIE_DETOURS_DETOUR_SIZE) - 2)
 			{
 				// Place our detour after the relative jmp
 				// This will result in the hotpatch being called first, however we won't break things here
 				// Use the DetourHotpatch class to create a hotpatch instead.
 				pSource_ = reinterpret_cast<function_type>(reinterpret_cast<address_type>(pSource_) + 2);
-				targetFunction = reinterpret_cast<uint8_t*>(pSource_);
+				targetFunction = reinterpret_cast<uint8_t *>(pSource_);
 			}
 #endif
 			// Used for finding the instruction count
-			uint8_t* pbCurOp = targetFunction;
+			uint8_t *pbCurOp = targetFunction;
 
 			// Find the required instruction count
-			while(instructionCount_ < MOLOGIE_DETOURS_DETOUR_SIZE)
+			while (instructionCount_ < MOLOGIE_DETOURS_DETOUR_SIZE)
 			{
-				if(*pbCurOp == 0xC3) // Abort if a RET instruction is hit
+				if (*pbCurOp == 0xC3) // Abort if a RET instruction is hit
 				{
 					throw DetourDisassemblerException("The target function is too short. Strictly refusing to detour it.");
 				}
 
 				size_t i = GetInstructionSize(pbCurOp);
 
-				if(i == 0)
+				if (i == 0)
 				{
 					throw DetourDisassemblerException("Disassembler returned invalid opcode length");
 				}
@@ -399,12 +396,12 @@ namespace MologieDetours
 			RelocateCode(targetFunction, backupOriginalCode_, instructionCount_);
 
 			// Jump back to original function after executing replaced code
-			uint8_t* jmpBack = backupOriginalCode_ + instructionCount_;
+			uint8_t *jmpBack = backupOriginalCode_ + instructionCount_;
 			jmpBack[0] = 0xE9;
 			*reinterpret_cast<address_pointer_type>(jmpBack + 1) = reinterpret_cast<address_type>(pSource_) + instructionCount_ - reinterpret_cast<address_type>(jmpBack) - MOLOGIE_DETOURS_DETOUR_SIZE;
 
 			// Make backupOriginalCode_ executable
-			if(!MOLOGIE_DETOURS_MEMORY_UNPROTECT(backupOriginalCode_, instructionCount_ + MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
+			if (!MOLOGIE_DETOURS_MEMORY_UNPROTECT(backupOriginalCode_, instructionCount_ + MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
 			{
 				throw DetourPageProtectionException("Failed to make copy of original code executable", backupOriginalCode_);
 			}
@@ -415,15 +412,15 @@ namespace MologieDetours
 			*reinterpret_cast<address_pointer_type>(trampoline_ + 1) = reinterpret_cast<address_type>(pDetour_) - reinterpret_cast<address_type>(trampoline_) - MOLOGIE_DETOURS_DETOUR_SIZE;
 
 			// Make trampoline_ executable
-			if(!MOLOGIE_DETOURS_MEMORY_UNPROTECT(trampoline_, MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
+			if (!MOLOGIE_DETOURS_MEMORY_UNPROTECT(trampoline_, MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
 			{
 				throw DetourPageProtectionException("Failed to make trampoline executable", trampoline_);
 			}
 
 			// Unprotect original function
-			if(!MOLOGIE_DETOURS_MEMORY_UNPROTECT(targetFunction, MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
+			if (!MOLOGIE_DETOURS_MEMORY_UNPROTECT(targetFunction, MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
 			{
-				throw DetourPageProtectionException("Failed to change page protection of original function", reinterpret_cast<void*>(targetFunction));
+				throw DetourPageProtectionException("Failed to change page protection of original function", reinterpret_cast<void *>(targetFunction));
 			}
 
 			// Redirect original function to trampoline
@@ -435,14 +432,14 @@ namespace MologieDetours
 			memcpy(backupDetour_, targetFunction, MOLOGIE_DETOURS_DETOUR_SIZE);
 
 			// Reprotect original function
-			if(!MOLOGIE_DETOURS_MEMORY_REPROTECT(targetFunction, MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
+			if (!MOLOGIE_DETOURS_MEMORY_REPROTECT(targetFunction, MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
 			{
-			    throw DetourPageProtectionException("Failed to change page protection of original function", reinterpret_cast<void*>(targetFunction));
+				throw DetourPageProtectionException("Failed to change page protection of original function", reinterpret_cast<void *>(targetFunction));
 			}
 
 			// Flush instruction cache on Windows
 #ifdef WIN32
-			FlushInstructionCache(GetCurrentProcess(), (const void*) pSource_, MOLOGIE_DETOURS_DETOUR_SIZE);
+			FlushInstructionCache(GetCurrentProcess(), (const void *)pSource_, MOLOGIE_DETOURS_DETOUR_SIZE);
 #endif
 		}
 
@@ -464,27 +461,27 @@ namespace MologieDetours
 			MOLOGIE_DETOURS_MEMORY_WINDOWS_INIT(dwProt);
 
 			// Make sure the modified function is left as-is
-			if(memcmp(reinterpret_cast<void*>(pSource_), backupDetour_, MOLOGIE_DETOURS_DETOUR_SIZE) != 0)
+			if (memcmp(reinterpret_cast<void *>(pSource_), backupDetour_, MOLOGIE_DETOURS_DETOUR_SIZE) != 0)
 			{
 				throw DetourException("Function has been modified, can not revert.");
 			}
 
 			// Unprotect original function
-			if(!MOLOGIE_DETOURS_MEMORY_UNPROTECT(pSource_, MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
+			if (!MOLOGIE_DETOURS_MEMORY_UNPROTECT(pSource_, MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
 			{
-				throw DetourPageProtectionException("Failed to change page protection of original function", reinterpret_cast<void*>(pSource_));
+				throw DetourPageProtectionException("Failed to change page protection of original function", reinterpret_cast<void *>(pSource_));
 			}
 
 			// Restore original code
-			memcpy(reinterpret_cast<void*>(pSource_), backupOriginalCode_, MOLOGIE_DETOURS_DETOUR_SIZE);
+			memcpy(reinterpret_cast<void *>(pSource_), backupOriginalCode_, MOLOGIE_DETOURS_DETOUR_SIZE);
 
 			// Fix relative jmps to point to the correct location
-			RelocateCode(backupOriginalCode_, reinterpret_cast<uint8_t*>(pSource_), instructionCount_);
+			RelocateCode(backupOriginalCode_, reinterpret_cast<uint8_t *>(pSource_), instructionCount_);
 
 			// Reprotect original function
-			if(!MOLOGIE_DETOURS_MEMORY_REPROTECT(pSource_, MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
+			if (!MOLOGIE_DETOURS_MEMORY_REPROTECT(pSource_, MOLOGIE_DETOURS_DETOUR_SIZE, dwProt))
 			{
-			    throw DetourPageProtectionException("Failed to change page protection of original function", trampoline_);
+				throw DetourPageProtectionException("Failed to change page protection of original function", trampoline_);
 			}
 
 			// Free memory allocated for trampoline and original code
@@ -507,32 +504,32 @@ namespace MologieDetours
 		 * @param [in,out]	baseNew	The new base.
 		 * @param	size		   	The code's size.
 		 */
-		void RelocateCode(uint8_t* baseOld, uint8_t* baseNew, size_t size)
+		void RelocateCode(uint8_t *baseOld, uint8_t *baseNew, size_t size)
 		{
-			uint8_t* pbCurOp = baseNew;
+			uint8_t *pbCurOp = baseNew;
 			address_type delta = baseOld - baseNew;
 
-			while(pbCurOp < baseNew + size)
+			while (pbCurOp < baseNew + size)
 			{
 #if defined(MOLOGIE_DETOURS_HDE_32)
-				hde32s hs = { 0 };
+				hde32s hs = {0};
 				uint8_t i = hde32_disasm(pbCurOp, &hs);
 #elif defined(MOLOGIE_DETOURS_HDE_64)
-				hde64s hs = { 0 };
+				hde64s hs = {0};
 				uint8_t i = hde64_disasm(pbCurOp, &hs);
 #endif
-				if(i == 0)
+				if (i == 0)
 				{
 					// Unknown instruction. Let's hope we don't break anything here and continue anyway.
 					return;
 				}
 
-				if(hs.flags & F_RELATIVE)
+				if (hs.flags & F_RELATIVE)
 				{
 #if defined(MOLOGIE_DETOURS_HDE_32)
-					if((hs.flags & F_IMM8) || (hs.flags & F_IMM16))
+					if ((hs.flags & F_IMM8) || (hs.flags & F_IMM16))
 #elif defined(MOLOGIE_DETOURS_HDE64)
-					if((hs.flags & F_IMM8) || (hs.flags & F_IMM16) || (hs.flags & F_IMM32))
+					if ((hs.flags & F_IMM8) || (hs.flags & F_IMM16) || (hs.flags & F_IMM32))
 #endif
 					{
 						// Oh noes! We shouldn't continue here.
@@ -540,16 +537,16 @@ namespace MologieDetours
 					}
 
 #if defined(MOLOGIE_DETOURS_HDE_32)
-					if(hs.flags & F_IMM32)
+					if (hs.flags & F_IMM32)
 					{
 						unsigned char offset = (hs.opcode == 0x0F) ? 2 : 1;
-						*reinterpret_cast<uint32_t*>(pbCurOp + offset) += delta;
+						*reinterpret_cast<uint32_t *>(pbCurOp + offset) += delta;
 					}
 #elif defined(MOLOGIE_DETOURS_HDE_64)
-					if(hs.flags & F_IMM64)
+					if (hs.flags & F_IMM64)
 					{
 						unsigned char offset = (hs.opcode == 0x0F) ? 2 : 1;
-						*reinterpret_cast<uint64_t*>(pbCurOp + offset) += delta;
+						*reinterpret_cast<uint64_t *>(pbCurOp + offset) += delta;
 					}
 #endif
 				}
@@ -570,23 +567,23 @@ namespace MologieDetours
 		 *
 		 * @return	The instruction size.
 		 */
-		size_t GetInstructionSize(const void* code)
+		size_t GetInstructionSize(const void *code)
 		{
 #if defined(MOLOGIE_DETOURS_HDE_32)
-			hde32s hs = { 0 };
+			hde32s hs = {0};
 			return hde32_disasm(code, &hs);
 #elif defined(MOLOGIE_DETOURS_HDE_64)
-			hde64s hs = { 0 };
+			hde64s hs = {0};
 			return hde64_disasm(code, &hs);
 #endif
 		}
 
-		function_type pSource_; // Pointer to target function
-		function_type pDetour_; // Pointer to detour function
-		uint8_t* backupOriginalCode_; // Pointer to the original code
-		uint8_t* backupDetour_; // Backup of the detour code for Revert()
-		uint8_t* trampoline_; // Trampoline which points to either the detour or the backed up code
-		size_t instructionCount_; // Size of code replaced
+		function_type pSource_;		  // Pointer to target function
+		function_type pDetour_;		  // Pointer to detour function
+		uint8_t *backupOriginalCode_; // Pointer to the original code
+		uint8_t *backupDetour_;		  // Backup of the detour code for Revert()
+		uint8_t *trampoline_;		  // Trampoline which points to either the detour or the backed up code
+		size_t instructionCount_;	  // Size of code replaced
 #ifndef WIN32
 		long int pageSize_; // Size of a single memory page
 #endif
@@ -600,10 +597,10 @@ namespace MologieDetours
 	 * @author	Oliver Kuckertz
 	 * @date	16.05.2011
 	 */
-	template <typename function_type> class DetourImport
+	template <typename function_type>
+	class DetourImport
 	{
 	public:
-
 		/**
 		 * @fn	DetourImport::DetourImport(address_type pSource, function_type pDetour)
 		 *
@@ -618,7 +615,7 @@ namespace MologieDetours
 		 * @param	pDetour	The detour function.
 		 */
 		DetourImport(address_type pSource, function_type pDetour)
-			: pSource_(reinterpret_cast<function_type*>(pSource)), pDetour_(pDetour)
+			: pSource_(reinterpret_cast<function_type *>(pSource)), pDetour_(pDetour)
 		{
 #ifndef WIN32
 			// Get page size on POSIX systems
@@ -629,16 +626,16 @@ namespace MologieDetours
 
 			pSourceBackup_ = *pSource_;
 
-			if(!MOLOGIE_DETOURS_MEMORY_UNPROTECT(pSource_, sizeof(pSource_), dwProt))
+			if (!MOLOGIE_DETOURS_MEMORY_UNPROTECT(pSource_, sizeof(pSource_), dwProt))
 			{
-				throw DetourPageProtectionException("Failed to change page protection of IAT", reinterpret_cast<void*>(pSource_));
+				throw DetourPageProtectionException("Failed to change page protection of IAT", reinterpret_cast<void *>(pSource_));
 			}
 
 			*pSource_ = pDetour_;
 
-			if(!MOLOGIE_DETOURS_MEMORY_REPROTECT(pSource_, sizeof(pSource_), dwProt))
+			if (!MOLOGIE_DETOURS_MEMORY_REPROTECT(pSource_, sizeof(pSource_), dwProt))
 			{
-				throw DetourPageProtectionException("Failed to change page protection of IAT", reinterpret_cast<void*>(pSource_));
+				throw DetourPageProtectionException("Failed to change page protection of IAT", reinterpret_cast<void *>(pSource_));
 			}
 		}
 
@@ -657,7 +654,7 @@ namespace MologieDetours
 		{
 			// Only continue if another application did not modify the IAT after us.
 			// This should not happen, usually.
-			if(!IsValid())
+			if (!IsValid())
 			{
 				// Mhm
 				return;
@@ -666,16 +663,16 @@ namespace MologieDetours
 			// Used for storing the original page protection flags on Windows
 			MOLOGIE_DETOURS_MEMORY_WINDOWS_INIT(dwProt);
 
-			if(!MOLOGIE_DETOURS_MEMORY_UNPROTECT(pSource_, sizeof(pSource_), dwProt))
+			if (!MOLOGIE_DETOURS_MEMORY_UNPROTECT(pSource_, sizeof(pSource_), dwProt))
 			{
-				throw DetourPageProtectionException("Failed to change page protection of IAT", reinterpret_cast<void*>(pSource_));
+				throw DetourPageProtectionException("Failed to change page protection of IAT", reinterpret_cast<void *>(pSource_));
 			}
 
 			*pSource_ = pSourceBackup_;
 
-			if(!MOLOGIE_DETOURS_MEMORY_REPROTECT(pSource_, sizeof(pSource_), dwProt))
+			if (!MOLOGIE_DETOURS_MEMORY_REPROTECT(pSource_, sizeof(pSource_), dwProt))
 			{
-				throw DetourPageProtectionException("Failed to change page protection of IAT", reinterpret_cast<void*>(pSource_));
+				throw DetourPageProtectionException("Failed to change page protection of IAT", reinterpret_cast<void *>(pSource_));
 			}
 		}
 
@@ -695,11 +692,11 @@ namespace MologieDetours
 		}
 
 	private:
-		function_type* pSource_;
+		function_type *pSource_;
 		function_type pSourceBackup_;
 		function_type pDetour_;
 #ifndef WIN32
-        long int pageSize_;
+		long int pageSize_;
 #endif
 	};
 
@@ -712,7 +709,8 @@ namespace MologieDetours
 	 * @author	Oliver Kuckertz
 	 * @date	16.05.2011
 	 */
-	template <typename function_type> class DetourHotpatch
+	template <typename function_type>
+	class DetourHotpatch
 		: public Detour<function_type>
 	{
 	public:
@@ -753,16 +751,16 @@ namespace MologieDetours
 		 */
 		bool IsHotpatchable()
 		{
-			const uint8_t movEdiEdi[] = { 0x8B, 0xFF };
+			const uint8_t movEdiEdi[] = {0x8B, 0xFF};
 
 			bool haveNops = true;
-			bool haveSpace = (memcmp(reinterpret_cast<void*>(this->pSource_), movEdiEdi, sizeof(movEdiEdi)) == 0);
+			bool haveSpace = (memcmp(reinterpret_cast<void *>(this->pSource_), movEdiEdi, sizeof(movEdiEdi)) == 0);
 
-			uint8_t* pbCode = reinterpret_cast<uint8_t*>(this->pSource_) - MOLOGIE_DETOURS_DETOUR_SIZE;
+			uint8_t *pbCode = reinterpret_cast<uint8_t *>(this->pSource_) - MOLOGIE_DETOURS_DETOUR_SIZE;
 
-			for(size_t i = 0; i < MOLOGIE_DETOURS_DETOUR_SIZE; i++)
+			for (size_t i = 0; i < MOLOGIE_DETOURS_DETOUR_SIZE; i++)
 			{
-				if(pbCode[i] != 0x90)
+				if (pbCode[i] != 0x90)
 				{
 					haveNops = false;
 					break;

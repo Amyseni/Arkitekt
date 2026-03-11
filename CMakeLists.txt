@@ -53,27 +53,10 @@ include_directories("src")
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 add_library(${PROJ_NAME} SHARED 
-<<<<<<< HEAD
-	"include/Arkitekt/Shared.hpp"
-	"include/Arkitekt/Compiler.h"
-	"include/Arkitekt/Compiler.win32.cpp"
-	"src/hde32/include/hde32.h"
-	"src/hde32/include/table32.h"
-	"src/hde32/src/hde32.cpp"
-	"src/Arkitekt.cpp"
-	"src/Arkitekt.h"
-	"src/detours.h"
-	"src/hde.h"
-	"src/Logging.cpp"
-	"src/PALMemoryProtection.h"
-	"include/dynasm/dasm_proto.h"
-	"include/dynasm/dasm_x86.h"
-=======
     "src/SigScan.h"
     "src/SigScan.cpp"
     "src/Arkitekt.win32.hpp"
     "src/Logging.cpp"
->>>>>>> ff2e196 (It hooks AT LEAST __stdcall... and maybe more idk)
 )
 
 set(CMAKE_SHARED_LIBRARY_PREFIX_CXX "")
