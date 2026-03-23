@@ -1,8 +1,9 @@
 # What is Arkitekt?
 
-Arkitekt is an API/wrapper building on top of DynASM to allow emitting instructions from files that have not been preprocessed. This is achived through a mixture of concepts, constraints, `if constexpr`, and templating to allow each supported instruction to essentially be represented by an empty consteval struct containing an `operator()` which uses the aforementioned concepts and constraints to cleanly define exactly what types it can be called with. With most instructions simply using the universal `Operand` constraint, however some more limited/nuanced instructions like `ret` may only accept `imm32/64` for immediate values. 
+Arkitekt is an API/wrapper building on top of DynASM to allow calling its emitter functions from a much more readable C++ syntax, rather than preprocessing any file that emits code. Currently supports Win32 only, but plans to expand to MacOS/Linux and Windows 32-64bit (and ARM for MacOS).
+It implements macros that can be used to detour functions in a running game in such a way that safe code execution can be achieved from only a function pointer and accompanying C++ typedef. Including a very helpful wrapper back to the original function that ensures it has a safe context to run whether it gets passed the original arguments or any arguments you choose, and can be skipped if the desire is to entirely overwrite a hooked function.
 
-It also contains a wrapper generator function which can be called on a fully typed function pointer (currently x86_32 only) and will return a function pointer that can be used with a detouring library to hook the function in question. The goal is to expand the supported instructions and architectures and eventually include helper functions for common instruction patterns and a system of linking defined/hooked functions to allow the assembler to generate runtime assembly from user created scripts. Essentially turning a reverse engineered binary and its functions into a ready-to-use scripting API. Maybe I'll even finish it before I kick it
+Use patterns can be seen in [Organik, a mod I make for Synthetik: Legion Rising](https://github.com/amyseni/organik) but, there's not really a tutorial yet.
 
 # Special Thanks / Libraries Used
 
