@@ -6,7 +6,9 @@ It also contains a wrapper generator function which can be called on a fully typ
 
 # Special Thanks / Libraries Used
 
-Arkitekt uses some code from and is otherwise heavily based on LibZHL by Kilburn (@FixItVinh), as well as FTL Hyperspace (and specifically their own LibZHL modifications/upgrades) and Aurie/YYToolKit.
+Arkitekt uses some code from and is otherwise inspired by LibZHL (from an alternate timeline where it was finished :3) by Kilburn (@FixItVinh)
+
+Arkitekt also owes nearly its entire existence to the team behind FTL Hyperspace for not just their ZHL modifications but their amazing willingness to let me bug them with weird esoteric issues and help anyways, as well as Aurie/YYToolkit and their author Archie (@[archie_osu](https://github.com/archie-osu))
 HDE (Hacker's Disassembler) and MologieDetours are also used to create and install function hooks. Their licenses are included with them (in detours.h for Mologie, and in hde32/LICENSE and hde64/LICENSE for HDE).
 
 - LibZHL is Licensed under MIT 2.0

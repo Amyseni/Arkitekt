@@ -1,26 +1,27 @@
 cmake_minimum_required(VERSION 4.2.3 FATAL_ERROR)
+set(SHELL "/usr/bin/zsh")
 set(CMAKE_SYSTEM_VERSION 10.0 CACHE STRING "" FORCE)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 message("Project version: ${PROJECT_VERSION}")
 
-
-project("${PROJ_NAME}" CXX)
 ################################################################################
 # Set target arch type if empty. Visual studio solution generator provides it.
 ################################################################################
 if(NOT CMAKE_VS_PLATFORM_NAME)
-	set(CMAKE_VS_PLATFORM_NAME "Win32")
+	set(CMAKE_VS_PLATFORM_NAME "x86")
 endif()
 message("${CMAKE_VS_PLATFORM_NAME} architecture in use")
 
-if(NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32"))
+if(NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86"))
 	message(FATAL_ERROR "${CMAKE_VS_PLATFORM_NAME} arch is not supported!")
 endif()
+
 
 ################################################################################
 # Global configuration types
 ################################################################################
+set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CONFIGURATION_TYPES
 	"Release"
 	CACHE STRING "" FORCE
@@ -39,7 +40,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 ################################################################################
 # Sub-projects
 ################################################################################
-set(PROJ_NAME ${PROJ_NAME})
+project(${PROJ_NAME} CXX)
 
 
 
@@ -53,10 +54,21 @@ include_directories("src")
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 add_library(${PROJ_NAME} SHARED 
-    "src/SigScan.h"
-    "src/SigScan.cpp"
-    "src/Arkitekt.win32.hpp"
-    "src/Logging.cpp"
+	"src/SigScan.h"
+	"src/SigScan.cpp"
+	"include/Arkitekt/Assembler.win32.hpp"
+	"src/hde32/include/hde32.h"
+	"src/hde32/include/table32.h"
+	"src/hde32/src/hde32.cpp"
+	"src/Arkitekt.cpp"
+	"src/Arkitekt.h"
+	"src/detours.h"
+	"src/hde.h"
+	"src/Logging.h"
+	"src/Logging.cpp"
+	"src/PALMemoryProtection.h"
+	"include/dynasm/dasm_proto.h"
+	"include/dynasm/dasm_x86.cpp"
 )
 
 set(CMAKE_SHARED_LIBRARY_PREFIX_CXX "")
@@ -76,18 +88,22 @@ if(DIRECTX_INCLUDE_DIR)
 	include_directories(${DIRECTX_INCLUDE_DIR})
 endif()
 
+
+################################################################################
+# Target
+################################################################################
+
 use_props(${PROJ_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
-set(ROOT_NAMESPACE src)
+set(ROOT_NAMESPACE Src)
+
 set_target_properties(${PROJ_NAME} PROPERTIES
 	VS_GLOBAL_KEYWORD "Win32Proj"
 )
 
 
-
 set_target_properties(${PROJ_NAME} PROPERTIES
 	INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
 )
-
 
 ################################################################################
 # MSVC runtime library
@@ -114,6 +130,7 @@ target_compile_definitions(${PROJ_NAME} PRIVATE
 	"NDEBUG;"
 	"_CRT_SECURE_NO_WARNINGS;"
 	"_CRT_NONSTDC_NO_DEPRECATE;"
+	"LIBARK_EXPORTS;"
 	"SECURITY_WIN32;"
 	"__i386__;"
 	"_WIN32;"
@@ -121,10 +138,11 @@ target_compile_definitions(${PROJ_NAME} PRIVATE
 	"_CONSOLE;"
 	"UNICODE;"
 	"_UNICODE;"
+	"LOGLEVEL=4;"
 )
 
 target_compile_definitions(${PROJ_NAME} PRIVATE _REENTRANT)
-
+target_compile_definitions(${PROJ_NAME} PRIVATE LIBARK_EXPORTS)
 ################################################################################
 # Compile and link options`
 ################################################################################
@@ -135,37 +153,29 @@ target_compile_options(${PROJ_NAME} PRIVATE
 	#! DEFINE the broken behavior and the reason a flag you are changing defines the behavior, otherwise LEAVE THESE ALONE
     
     /permissive-;           #! prevent non-conformance to the C++ standard
-    /Zc:rvalueCast;         #* msvc docs: the compiler follows section 5.4 of the C++11 standard and treats only cast expressions that result in non-reference types 
-							#* and cast expressions that result in rvalue references to non-function types as rvalue types.
-							#* by default: the compiler is non-conforming, and treats all cast expressions that result in rvalue references as rvalues.
-    /Zc:referenceBinding;   #! doesn't allow expressions that bind a user-defined type temporary to a non-const lvalue reference. 
-							#! By default, or if /Zc:referenceBinding- is specified, the compiler allows such expressions as a Microsoft extension
+    /Zc:rvalueCast;         #* msvc docs: causes the compiler to follow section 5.4 of the C++11 standard and treats only cast expressions that 
+							#* result in non-reference types or rvalue references to non-function types as rvalue types.
+    /Zc:referenceBinding;   #! doesn't allow expressions that bind a user-defined type temporary to a non-const lvalue reference.
+							#! BASICALLY: never move a temporary variable, unless it is const
+	/O2;					#! optimize speed with virtually no safeguards
 	/W3;                    #* warning level 3
-    /Zc:wchar_t;            #* enable wchar_t as a built-in type (default, no other options disable this, listed for the sake of completeness of implied flag usage)
-	#/Z7;					#? generate full debug PDB info
-    #/Gm-;                   #! disable minimal rebuild (this is a performance optimization that can cause issues with certain code patterns, so we disable it)
-	/Ox;					#* tend to optimize for speed
-    /arch:SSE2;             #! use the x86-SSE2 instruction set. (includes floating point opcodes)
-    /Gz;                    #! use __stdcall for all functions except member functions
-	/Oy-;					#! don't omit frame pointers
-    /MD;                    #* use the multithreaded DLL version of the C runtime library (msvcrt.dll)
-    /std:c++23preview;      #* use latest (preview) C++ std 23
+    /Zc:wchar_t;            #* enable wchar_t as a built-in type (default, listed for the sake of completeness)
 	/Zc:preprocessor;
-    /FC;                    
-	/Zc:inline-;			#! do not remove unreferenced data or functions
-    /Ot;                    #* optimize for speed
-	/Zc:nrvo-;				#! disable optional elision (skipping) of copy / move operations on returning newly instantiated variables from functions.
-    /Zc:tlsGuards;			#! enables checks for initialization of thread-local variables in DLLs. Previously, thread-local variables in DLLs weren't correctly initialized. 
-							#! Other than on the thread that loaded the DLL, they weren't initialized before first use on threads that existed before the DLL was loaded.
+	/Ox;					#* MORE SPEED (implied by /O2)
+    /arch:SSE2;             #! use the x86-SSE2 instruction set. (includes floating point opcodes)
+    /Gz;                    #! use __cdecl for all functions except member functions
+    /Oi;                    #! enable intrinsic functions because THEY FAST
+	/Ob2;                   #! allow maximum inlining (function level)
+							#! this is okay only because #pragma statements are used to disable inlining of speicfic functions.
+    /MD;                    #* idk something about building a DLL
+	/Zc:inline-;			#! do not remove unreferenced data or functions (well named flag alert.)
+    /Ot;                    #* EVEN MORE SPEED (implied by /O2)
+	/Zc:nrvo-;				#! When returning a call to an initializer (e.g. return RValue(5);), always compile explicit move/copy
+    /Zc:tlsGuards;			#! enable checks for initialization of thread-local variables for non-main threads in DLLs.
 )
-
 target_link_options(${PROJ_NAME} PRIVATE
-	/NDEBUG;				#! implies certain things to the linker about symbol removal / combining things it thinks are identical. these flags you should basically never touch
-							#! if you do mess with them, the linker will mess with you and you don't win that fight
-	/OPT:NOREF;				#! leave unreferenced data and functions alone (but the linker this time) (implicit by /DEBUG)
-	/OPT:NOICF;				#! do not iteratively fold identical COMDATs (redundant COMDATs are removed by the linker if true) (also implicit by /DEBUG)
-	/LTCG:OFF;				#! NO link-time code generation optimizations. if you aren't sure why this matters DO NOT TOUCH IT
-	#/ASSEMBLYDEBUG; 		#? emits the DebuggableAttribute attribute with debug information tracking and 
-							#! disables JIT optimizations
+	/OPT:NOREF;
+	/OPT:NOICF;
 	/SUBSYSTEM:CONSOLE;
 )
+
