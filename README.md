@@ -15,4 +15,5 @@ HDE (Hacker's Disassembler) and MologieDetours are also used to create and insta
 - LibZHL is Licensed under [MIT](https://github.com/amyseni/arkitekt/blob/master/LibZHL-License) and Arkitekt.cpp and Arkitekt.h must maintain attribution to Kilburn (@FixItVinh) if used.
 - Hyperspace is Licensed under CC-BY-SA 4.0
 - Aurie and YYToolKit are Licensed under AGPL-3.0
+- MologieDetours' license is included with it in [detours.h](https://github.com/amyseni/arkitekt/blob/master/src/detours.h) and also uses HDE (Hackers Disassembler) which has its license included in [hde(32/64)/LICENSE](https://github.com/amyseni/arkitekt/blob/master/src/hde32/LICENSE).
 - DynASM is Licensed under [MIT](https://www.opensource.org/licenses/mit-license.php)
